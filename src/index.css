@@ -1,0 +1,64 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-50: #f4f5ff;
+  --color-brand-100: #e2e4ff;  /* Requested light color */
+  --color-brand-500: #424fff;
+  --color-brand-600: #2d3bff;  /* Requested primary color */
+  --color-brand-700: #2531d9;
+  --color-brand-900: #1b2399;
+  
+  --color-alert-info-bg: #e2e4ff;
+  --color-alert-info-text: #2d3bff;
+  --color-alert-success-bg: #e6f6ec;
+  --color-alert-success-text: #059669;
+  --color-alert-warning-bg: #fef7e6;
+  --color-alert-warning-text: #d97706;
+  --color-alert-error-bg: #feeaed;
+  --color-alert-error-text: #dc2626;
+}
+
+@layer base {
+  :root {
+    --background: #ffffff; /* Requested all white */
+    --foreground: #0f172a;
+  }
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: 'Inter', system-ui, sans-serif;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom premium utilities */
+@layer utilities {
+  .glass {
+    @apply bg-white/80 backdrop-blur-lg border border-brand-100/30 shadow-xl;
+  }
+  .glass-dark {
+    @apply bg-slate-900/70 backdrop-blur-md border border-slate-700/50 shadow-xl;
+  }
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-brand-600 to-cyan-500;
+  }
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-out;
+  }
+  
+  /* Alerts Utility */
+  .alert-info {
+    @apply bg-[var(--color-alert-info-bg)] text-[var(--color-alert-info-text)] p-4 rounded-lg font-medium;
+  }
+  .alert-success {
+    @apply bg-[var(--color-alert-success-bg)] text-[var(--color-alert-success-text)] p-4 rounded-lg font-medium;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
