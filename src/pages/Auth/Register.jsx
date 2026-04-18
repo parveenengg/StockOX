@@ -26,6 +26,7 @@ export default function Register() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
   // Auto-generate workspace ID strictly mapped from business name if workspace ID is untouched
   useEffect(() => {
@@ -58,13 +59,14 @@ export default function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
     setIsSubmitting(true);
     try {
       await registerUser(formData);
       // Success - carry email to OTP logic
       navigate('/otp', { state: { email: formData.adminEmail || formData.companyEmail } });
     } catch (err) {
-      console.error(err);
+      setError(err.message || 'Registration failed. Please check your details.');
     } finally {
       setIsSubmitting(false);
     }
@@ -79,6 +81,7 @@ export default function Register() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {error && <div className="bg-rose-50 border border-rose-200 text-rose-600 px-4 py-3 rounded-lg text-sm font-medium">{error}</div>}
         
         {/* SECTION A */}
         <div className="space-y-4">

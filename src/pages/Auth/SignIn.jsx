@@ -1,19 +1,29 @@
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
-import { useState } from 'react';
+import { loginUser } from '../../services/auth.service';
 import logo from '../../assets/logo.jpeg';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    setTimeout(() => {
+    setError('');
+    setIsSubmitting(true);
+    try {
+      await loginUser({ email, password });
       navigate('/dashboard');
-    }, 500);
+    } catch (err) {
+      setError(err.message || 'Login failed. Please check your credentials.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -23,6 +33,8 @@ export default function Login() {
         <h2 className="text-4xl font-extrabold text-slate-900 tracking-tight">Welcome Back</h2>
         <p className="text-slate-500 mt-4 text-lg font-medium">Enter your credentials to access your account.</p>
       </div>
+
+      {error && <div className="mb-6 bg-rose-50 border border-rose-200 text-rose-600 px-4 py-3 rounded-lg text-sm font-medium">{error}</div>}
 
       <form onSubmit={handleLogin} className="space-y-6">
         <div>
@@ -78,9 +90,10 @@ export default function Login() {
 
         <button
           type="submit"
-          className="w-full flex justify-center py-4 px-4 mt-8 rounded-xl shadow-lg shadow-brand-500/20 text-lg font-bold text-white bg-brand-600 hover:bg-brand-700 focus:outline-none focus:ring-4 focus:ring-brand-100 transition-all border border-transparent"
+          disabled={isSubmitting}
+          className="w-full flex justify-center py-4 px-4 mt-8 rounded-xl shadow-lg shadow-brand-500/20 text-lg font-bold text-white bg-brand-600 hover:bg-brand-700 focus:outline-none focus:ring-4 focus:ring-brand-100 transition-all border border-transparent disabled:opacity-70 disabled:cursor-not-allowed"
         >
-          Sign In
+          {isSubmitting ? 'Signing in...' : 'Sign In'}
         </button>
       </form>
 

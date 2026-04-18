@@ -1,12 +1,26 @@
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail } from 'lucide-react';
+import { forgotPassword } from '../../services/auth.service';
 
 export default function ForgotPassword() {
+  const [email, setEmail] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    navigate('/set-new-password'); // Route to next step
+    setIsSubmitting(true);
+    setError('');
+    try {
+      await forgotPassword(email);
+      navigate('/set-new-password', { state: { email } });
+    } catch (err) {
+      setError(err.message || 'Failed to send reset email.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -17,6 +31,8 @@ export default function ForgotPassword() {
       </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {error && <div className="bg-rose-50 border border-rose-200 text-rose-600 px-4 py-3 rounded-lg text-sm font-medium">{error}</div>}
+          
           <div>
           <label className="block text-sm font-bold text-slate-700 mb-2">Email Address</label>
           <div className="relative">
@@ -25,6 +41,8 @@ export default function ForgotPassword() {
             </div>
             <input
               type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="block w-full pl-12 pr-4 py-4 border-2 border-slate-100 rounded-xl focus:ring-4 focus:ring-brand-100 focus:border-brand-600 outline-none font-medium text-slate-900 transition-all bg-white"
               placeholder="admin@stockox.com"
               required
@@ -34,9 +52,10 @@ export default function ForgotPassword() {
 
           <button
             type="submit"
-          className="w-full flex justify-center py-4 px-4 rounded-xl shadow-lg shadow-brand-500/20 text-lg font-bold text-white bg-brand-600 hover:bg-brand-700 transition"
+            disabled={isSubmitting}
+            className="w-full flex justify-center py-4 px-4 rounded-xl shadow-lg shadow-brand-500/20 text-lg font-bold text-white bg-brand-600 hover:bg-brand-700 transition disabled:opacity-70 disabled:cursor-not-allowed"
           >
-          Send Reset OTP
+            {isSubmitting ? 'Sending...' : 'Send Reset OTP'}
           </button>
         </form>
 

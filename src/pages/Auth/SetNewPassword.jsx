@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Lock, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
+import { resetPassword } from '../../services/auth.service';
 
 export default function SetNewPassword() {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
@@ -8,8 +9,13 @@ export default function SetNewPassword() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
   const inputRefs = useRef([]);
   const navigate = useNavigate();
+  const location = useLocation();
+  const email = location.state?.email || 'user@email.com';
 
   const getPasswordStrength = () => {
     if (!password) return 0;
@@ -55,16 +61,36 @@ export default function SetNewPassword() {
     if (pastedData.length > 0) inputRefs.current[Math.min(pastedData.length, 5)].focus();
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    navigate('/login');
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+    const extractedOtp = otp.join('');
+    if (extractedOtp.length < 6) {
+      setError("Please enter all 6 digits of the OTP.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setError('');
+    try {
+      await resetPassword(email, extractedOtp, password, confirmPassword);
+      sessionStorage.clear();
+      navigate('/sign-in');
+    } catch (err) {
+      setError(err.message || 'Failed to reset password. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <div className="animate-fade-in w-full max-w-md mx-auto">
       <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-xl flex items-center gap-3 mb-8 text-emerald-700 font-bold text-sm shadow-sm">
         <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
-        OTP sent to user@email.com
+        OTP sent to {email}
       </div>
 
       <div className="text-center mb-8">
@@ -73,6 +99,8 @@ export default function SetNewPassword() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {error && <div className="bg-rose-50 border border-rose-200 text-rose-600 px-4 py-3 rounded-lg text-sm font-medium">{error}</div>}
+        
         <div>
           <div className="flex justify-between mb-2 gap-2">
             {otp.map((data, index) => (
@@ -153,9 +181,10 @@ export default function SetNewPassword() {
 
         <button
           type="submit"
-          className="w-full flex justify-center py-4 px-4 mt-8 rounded-xl shadow-lg shadow-brand-500/20 text-lg font-bold text-white bg-brand-600 hover:bg-brand-700 focus:outline-none focus:ring-4 focus:ring-brand-100 transition-all border border-transparent"
+          disabled={isSubmitting}
+          className="w-full flex justify-center py-4 px-4 mt-8 rounded-xl shadow-lg shadow-brand-500/20 text-lg font-bold text-white bg-brand-600 hover:bg-brand-700 focus:outline-none focus:ring-4 focus:ring-brand-100 transition-all border border-transparent disabled:opacity-70 disabled:cursor-not-allowed"
         >
-          Save New Password
+          {isSubmitting ? 'Saving...' : 'Save New Password'}
         </button>
       </form>
 

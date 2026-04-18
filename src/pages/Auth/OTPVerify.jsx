@@ -1,11 +1,13 @@
 import { useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { verifyOtp } from '../../services/auth.service';
+import { verifyOtp, resendOtp } from '../../services/auth.service';
 
 export default function OTPVerify() {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [isVerifying, setIsVerifying] = useState(false);
   const [error, setError] = useState('');
+  const [resending, setResending] = useState(false);
+  const [resendMessage, setResendMessage] = useState('');
   
   const inputRefs = useRef([]);
   const navigate = useNavigate();
@@ -70,6 +72,8 @@ export default function OTPVerify() {
     }
 
     setIsVerifying(true);
+    setError('');
+    setResendMessage('');
     try {
       await verifyOtp(email, extractedOtp);
       // Data persistence clear if successful
@@ -80,6 +84,20 @@ export default function OTPVerify() {
       setError(err.message || 'Verification failed. Try again.');
     } finally {
       setIsVerifying(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    setResending(true);
+    setError('');
+    setResendMessage('');
+    try {
+      await resendOtp(email);
+      setResendMessage('OTP has been resent to your email.');
+    } catch (err) {
+      setError(err.message || 'Failed to resend OTP.');
+    } finally {
+      setResending(false);
     }
   };
 
@@ -110,6 +128,7 @@ export default function OTPVerify() {
         </div>
         
         {error && <p className="text-rose-500 font-bold text-sm mb-4">{error}</p>}
+        {resendMessage && <p className="text-brand-600 font-bold text-sm mb-4">{resendMessage}</p>}
         
         {!error && (
           <p className="text-sm font-bold text-slate-400 mb-8">
@@ -129,8 +148,13 @@ export default function OTPVerify() {
       <div className="mt-8 space-y-4">
         <p className="text-center font-medium text-slate-600">
           Didn't get the code?{' '}
-          <button className="font-bold text-brand-600 hover:text-brand-700 transition">
-            Resend OTP
+          <button 
+            type="button" 
+            onClick={handleResendOtp}
+            disabled={resending}
+            className="font-bold text-brand-600 hover:text-brand-700 transition disabled:opacity-70 disabled:cursor-not-allowed"
+          >
+            {resending ? 'Resending...' : 'Resend OTP'}
           </button>
         </p>
         <p className="text-center font-medium text-slate-600">
