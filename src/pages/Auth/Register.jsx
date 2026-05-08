@@ -27,6 +27,7 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
 
   // Auto-generate workspace ID strictly mapped from business name if workspace ID is untouched
   useEffect(() => {
@@ -60,6 +61,23 @@ export default function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setFieldErrors({});
+
+    const errors = {};
+    if (!formData.businessName) errors.businessName = 'Business name is required';
+    if (!formData.companyEmail) errors.companyEmail = 'Company email is required';
+    if (!formData.phone) errors.phone = 'Phone number is required';
+    if (!formData.workspaceId) errors.workspaceId = 'Workspace ID is required';
+    if (!formData.firstName) errors.firstName = 'First name is required';
+    if (!formData.lastName) errors.lastName = 'Last name is required';
+    if (!formData.adminEmail) errors.adminEmail = 'Admin email is required';
+    if (!formData.password) errors.password = 'Password is required';
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       await registerUser(formData);
@@ -80,7 +98,7 @@ export default function Register() {
         <p className="text-slate-500 text-sm font-medium mt-1">Set up your company - takes 2 minutes</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-6" noValidate>
         {error && <div className="bg-rose-50 border border-rose-200 text-rose-600 px-4 py-3 rounded-lg text-sm font-medium">{error}</div>}
         
         {/* SECTION A */}
@@ -96,8 +114,8 @@ export default function Register() {
               onChange={handleChange}
               className="block w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-100 focus:border-brand-600 outline-none transition-all text-sm font-medium text-slate-900"
               placeholder="Acme traders"
-              required
             />
+            {fieldErrors.businessName && <p className="text-rose-500 text-xs mt-1.5 font-medium">{fieldErrors.businessName}</p>}
           </div>
 
           <div>
@@ -109,8 +127,8 @@ export default function Register() {
               onChange={handleChange}
               className="block w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-100 focus:border-brand-600 outline-none transition-all text-sm font-medium text-slate-900"
               placeholder="acme.traders@gmail.com"
-              required
             />
+            {fieldErrors.companyEmail && <p className="text-rose-500 text-xs mt-1.5 font-medium">{fieldErrors.companyEmail}</p>}
           </div>
 
           <div>
@@ -122,8 +140,8 @@ export default function Register() {
               onChange={handleChange}
               className="block w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-100 focus:border-brand-600 outline-none transition-all text-sm font-medium text-slate-900"
               placeholder="+91 92654681654"
-              required
             />
+            {fieldErrors.phone && <p className="text-rose-500 text-xs mt-1.5 font-medium">{fieldErrors.phone}</p>}
           </div>
 
           <div>
@@ -139,7 +157,6 @@ export default function Register() {
                 onChange={handleChange}
                 className="flex-1 px-3 py-2.5 outline-none text-sm font-bold text-brand-600 w-full"
                 placeholder="acme-traders"
-                required
               />
               {formData.workspaceId.length > 2 && (
                 <div className="pr-3 flex items-center bg-white">
@@ -147,6 +164,7 @@ export default function Register() {
                 </div>
               )}
             </div>
+            {fieldErrors.workspaceId && <p className="text-rose-500 text-xs mt-1.5 font-medium">{fieldErrors.workspaceId}</p>}
           </div>
         </div>
 
@@ -164,8 +182,8 @@ export default function Register() {
                 onChange={handleChange}
                 className="block w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-100 focus:border-brand-600 outline-none transition-all text-sm font-medium text-slate-900"
                 placeholder="Ramesh"
-                required
               />
+              {fieldErrors.firstName && <p className="text-rose-500 text-xs mt-1.5 font-medium">{fieldErrors.firstName}</p>}
             </div>
             <div>
               <label className="block text-[13px] font-bold text-slate-800 mb-1.5">Last name</label>
@@ -176,8 +194,8 @@ export default function Register() {
                 onChange={handleChange}
                 className="block w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-100 focus:border-brand-600 outline-none transition-all text-sm font-medium text-slate-900"
                 placeholder="Sharma"
-                required
               />
+              {fieldErrors.lastName && <p className="text-rose-500 text-xs mt-1.5 font-medium">{fieldErrors.lastName}</p>}
             </div>
           </div>
 
@@ -190,8 +208,8 @@ export default function Register() {
               onChange={handleChange}
               className="block w-full px-3 py-2.5 border border-brand-600 rounded-lg outline-none transition-all text-sm font-bold text-slate-900 shadow-[0_0_0_2px_rgba(45,59,255,0.1)]"
               placeholder="ramesh@gmail.com"
-              required
             />
+            {fieldErrors.adminEmail && <p className="text-rose-500 text-xs mt-1.5 font-medium">{fieldErrors.adminEmail}</p>}
           </div>
 
           <div>
@@ -204,7 +222,6 @@ export default function Register() {
                 onChange={handleChange}
                 className="block w-full pl-3 pr-10 py-2.5 outline-none bg-transparent text-sm font-bold text-slate-900 tracking-wider"
                 placeholder="••••••••"
-                required
               />
               <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
                 <button type="button" onClick={() => setShowPassword(!showPassword)} className="text-slate-400 hover:text-slate-600 outline-none">
@@ -224,6 +241,7 @@ export default function Register() {
                 {strength > 0 ? strengthLabels[strength] : 'Enter a password'}
               </p>
             </div>
+            {fieldErrors.password && <p className="text-rose-500 text-xs mt-1.5 font-medium">{fieldErrors.password}</p>}
           </div>
         </div>
 

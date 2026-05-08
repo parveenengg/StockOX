@@ -62,3 +62,27 @@ body {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+@media print {
+  /* Hide navigation elements when printing */
+  nav, .sidebar, .top-navbar, button {
+    display: none !important;
+  }
+  
+  /* Ensure main content takes full width */
+  main, .dashboard-content {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+  
+  /* Remove shadows and adjust background for print */
+  body {
+    background: white !important;
+  }
+  
+  .shadow-sm, .shadow-xl {
+    box-shadow: none !important;
+    border: 1px solid #e2e8f0 !important;
+  }
+}

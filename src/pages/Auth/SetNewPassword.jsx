@@ -11,6 +11,7 @@ export default function SetNewPassword() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const inputRefs = useRef([]);
   const navigate = useNavigate();
@@ -63,6 +64,18 @@ export default function SetNewPassword() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setFieldErrors({});
+    setError('');
+
+    const errors = {};
+    if (!password) errors.password = 'Password is required';
+    if (!confirmPassword) errors.confirmPassword = 'Confirm password is required';
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError("Passwords do not match.");
       return;
@@ -98,7 +111,7 @@ export default function SetNewPassword() {
         <p className="text-slate-500 font-medium mt-4">Enter the OTP from your email and choose a new password</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-6" noValidate>
         {error && <div className="bg-rose-50 border border-rose-200 text-rose-600 px-4 py-3 rounded-lg text-sm font-medium">{error}</div>}
         
         <div>
@@ -134,7 +147,6 @@ export default function SetNewPassword() {
               onChange={(e) => setPassword(e.target.value)}
               className="block w-full pl-12 pr-12 py-3 border-2 border-slate-100 rounded-xl focus:ring-4 focus:ring-brand-100 focus:border-brand-600 outline-none font-medium text-slate-900 transition-all bg-white"
               placeholder="••••••••"
-              required
             />
             <div className="absolute inset-y-0 right-0 pr-4 flex items-center">
               <button type="button" onClick={() => setShowPassword(!showPassword)} className="text-slate-400 hover:text-slate-600 transition">
@@ -155,6 +167,7 @@ export default function SetNewPassword() {
               </p>
             </div>
           )}
+          {fieldErrors.password && <p className="text-rose-500 text-xs mt-1.5 font-medium">{fieldErrors.password}</p>}
         </div>
 
         <div>
@@ -169,7 +182,6 @@ export default function SetNewPassword() {
               onChange={(e) => setConfirmPassword(e.target.value)}
               className="block w-full pl-12 pr-12 py-3 border-2 border-slate-100 rounded-xl focus:ring-4 focus:ring-brand-100 focus:border-brand-600 outline-none font-medium text-slate-900 transition-all bg-white"
               placeholder="••••••••"
-              required
             />
             <div className="absolute inset-y-0 right-0 pr-4 flex items-center">
               <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="text-slate-400 hover:text-slate-600 transition">
@@ -177,6 +189,7 @@ export default function SetNewPassword() {
               </button>
             </div>
           </div>
+          {fieldErrors.confirmPassword && <p className="text-rose-500 text-xs mt-1.5 font-medium">{fieldErrors.confirmPassword}</p>}
         </div>
 
         <button

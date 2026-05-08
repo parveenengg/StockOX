@@ -5,12 +5,14 @@ export default function Pricing() {
   const navigate = useNavigate();
 
   const handlePlanClick = () => {
-    // Dynamic logic if token exists route to /payment, else /sign-in
-    const token = sessionStorage.getItem('demo_token');
+    // Check for real authentication token
+    const token = sessionStorage.getItem('accessToken');
     if (token) {
-      navigate('/payment');
+      // User is logged in -> route straight to subscription checkout
+      navigate('/dashboard/subscription', { state: { intent: 'upgrade' } });
     } else {
-      navigate('/sign-in');
+      // User is not logged in -> route to sign in, but remember they want to upgrade
+      navigate('/sign-in', { state: { from: { pathname: '/dashboard/subscription' }, intent: 'upgrade' } });
     }
   };
 

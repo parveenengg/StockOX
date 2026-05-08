@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Package, ShoppingCart, Truck, LogOut, Settings, BarChart2, Users } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingCart, Truck, LogOut, Settings, BarChart2, Users, CreditCard } from 'lucide-react';
 import clsx from 'clsx';
 import logo from '../../assets/logo.jpeg'; 
 
@@ -42,7 +42,7 @@ export default function Sidebar({ isMobileOpen, setMobileOpen, isDesktopCollapse
           "h-16 flex items-center border-b border-slate-200 transition-all", 
           isDesktopCollapsed ? "justify-center px-0" : "px-6"
         )}>
-          <Link to="/dashboard" className="flex items-center gap-3">
+          <Link to="/" className="flex items-center gap-3">
             <img src={logo} alt="StockOX" className="w-[32px] h-[32px] object-contain rounded-lg flex-shrink-0 border border-slate-100 shadow-sm" />
             {!isDesktopCollapsed && <span className="text-xl font-bold text-slate-900 tracking-tight animate-fade-in block">StockOX</span>}
           </Link>
@@ -82,6 +82,16 @@ export default function Sidebar({ isMobileOpen, setMobileOpen, isDesktopCollapse
              )}>
             <Settings size={20} className="text-slate-400 group-hover:text-slate-600" />
             {!isDesktopCollapsed && <span>Settings</span>}
+          </Link>
+          <Link 
+             to="/dashboard/subscription" 
+             title={isDesktopCollapsed ? 'Subscription' : undefined}
+             className={clsx(
+               "flex items-center rounded-xl font-medium transition-all group",
+               isDesktopCollapsed ? "justify-center p-3" : "gap-3 px-3 py-2.5 text-slate-600 hover:bg-white hover:shadow-sm"
+             )}>
+            <CreditCard size={20} className="text-slate-400 group-hover:text-slate-600" />
+            {!isDesktopCollapsed && <span>Subscription</span>}
           </Link>
           <button 
              onClick={handleLogout}

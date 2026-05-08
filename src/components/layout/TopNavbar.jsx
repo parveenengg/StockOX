@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
-import { Menu, Search, Bell, User, LogOut, Package } from 'lucide-react';
+import { Menu, Search, Bell, User, LogOut, Package, X, CheckCircle2 } from 'lucide-react';
 
 export default function TopNavbar({ onMenuClick, onDesktopMenuToggle, isDesktopCollapsed }) {
   const [showNotifications, setShowNotifications] = useState(false);
@@ -8,6 +8,13 @@ export default function TopNavbar({ onMenuClick, onDesktopMenuToggle, isDesktopC
   
   const notifRef = useRef(null);
   const profileRef = useRef(null);
+
+  // State for notifications
+  const [notifications, setNotifications] = useState([
+    { id: 1, text: 'Low stock alert: MacBook Pro M2', time: '5m ago', read: false },
+    { id: 2, text: 'New order #ORD-8940 received', time: '12m ago', read: false },
+    { id: 3, text: 'Supplier shipment delayed', time: '1h ago', read: true },
+  ]);
 
   // Boilerplate outside click handler
   useEffect(() => {
@@ -24,11 +31,12 @@ export default function TopNavbar({ onMenuClick, onDesktopMenuToggle, isDesktopC
     window.location.href = '/';
   };
 
-  const notifications = [
-    { id: 1, text: 'Low stock alert: MacBook Pro M2', time: '5m ago', read: false },
-    { id: 2, text: 'New order #ORD-8940 received', time: '12m ago', read: false },
-    { id: 3, text: 'Supplier shipment delayed', time: '1h ago', read: true },
-  ];
+  const removeNotification = (id, e) => {
+    e.stopPropagation(); // Prevent closing the dropdown if clicking the item itself has an action
+    setNotifications(notifications.filter(n => n.id !== id));
+  };
+
+  const hasUnread = notifications.some(n => !n.read);
 
   return (
     <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-6 z-10 transition-all duration-300">
@@ -70,21 +78,48 @@ export default function TopNavbar({ onMenuClick, onDesktopMenuToggle, isDesktopC
             className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full relative transition-colors"
           >
             <Bell size={20} />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white focus:outline-none"></span>
+            {hasUnread && <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white focus:outline-none"></span>}
           </button>
 
           {showNotifications && (
-            <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-slate-100 animate-fade-in origin-top-right overflow-hidden z-50">
+            <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-slate-100 animate-fade-in origin-top-right overflow-hidden z-50 flex flex-col">
               <div className="px-4 py-3 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
                 <span className="font-bold text-slate-800">Notifications</span>
+                {notifications.length > 0 && (
+                   <button 
+                     onClick={() => setNotifications([])}
+                     className="text-xs font-bold text-brand-600 hover:text-brand-700 transition"
+                   >
+                     Clear all
+                   </button>
+                )}
               </div>
               <div className="max-h-96 overflow-y-auto">
-                {notifications.map(notif => (
-                  <div key={notif.id} className={`px-4 py-3 hover:bg-slate-50 cursor-pointer border-b border-slate-50 last:border-0 ${!notif.read ? 'bg-brand-50/20' : ''}`}>
-                    <p className="text-sm font-medium text-slate-800">{notif.text}</p>
-                    <p className="text-xs text-slate-500 mt-1">{notif.time}</p>
+                {notifications.length > 0 ? (
+                  notifications.map(notif => (
+                    <div key={notif.id} className={`px-4 py-3 hover:bg-slate-50 border-b border-slate-50 last:border-0 relative group transition-colors ${!notif.read ? 'bg-brand-50/20' : ''}`}>
+                      <div className="pr-6">
+                        <p className="text-sm font-medium text-slate-800">{notif.text}</p>
+                        <p className="text-xs text-slate-500 mt-1">{notif.time}</p>
+                      </div>
+                      <button 
+                        onClick={(e) => removeNotification(notif.id, e)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
+                        title="Dismiss"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  ))
+                ) : (
+                  <div className="px-4 py-8 text-center flex flex-col items-center justify-center">
+                    <div className="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-500 mb-3">
+                      <CheckCircle2 size={24} />
+                    </div>
+                    <p className="text-sm font-bold text-slate-800">All caught up!</p>
+                    <p className="text-xs text-slate-500 mt-1">You have no new notifications.</p>
                   </div>
-                ))}
+                )}
               </div>
             </div>
           )}

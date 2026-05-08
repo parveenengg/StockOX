@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { loginUser } from '../../services/auth.service';
 import logo from '../../assets/logo.jpeg';
@@ -9,16 +9,67 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [keepSignedIn, setKeepSignedIn] = useState(false);
+  const location = useLocation();
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
+    setFieldErrors({});
+
+    const errors = {};
+    if (!email) errors.email = 'Email is required';
+    if (!password) errors.password = 'Password is required';
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+
     setIsSubmitting(true);
+    
+    // Helper to store in both local and session if keepSignedIn is true
+    const storeCredentials = (email, name, token, userId) => {
+      sessionStorage.setItem('userEmail', email);
+      if (name) sessionStorage.setItem('userName', name);
+      if (token) sessionStorage.setItem('accessToken', token);
+      if (userId) sessionStorage.setItem('userId', userId);
+
+      if (keepSignedIn) {
+        localStorage.setItem('userEmail', email);
+        if (name) localStorage.setItem('userName', name);
+        if (token) localStorage.setItem('accessToken', token);
+        if (userId) localStorage.setItem('userId', userId);
+      }
+    };
+    
+    // Bypass backend API for the demo account
+    if (email === 'demo@gmail.com' && password === 'pass@1234') {
+      storeCredentials('demo@gmail.com', 'Demo User', null, null);
+      const from = location.state?.from?.pathname || '/dashboard';
+      navigate(from, { replace: true });
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
-      await loginUser({ email, password });
-      navigate('/dashboard');
+      const response = await loginUser({ email, password });
+      
+      // Store token and user data
+      if (response.data && response.data.data && response.data.data.accessToken) {
+        const data = response.data.data;
+        const fullName = data.firstName ? `${data.firstName} ${data.lastName || ''}` : null;
+        storeCredentials(email, fullName, data.accessToken, data.userId);
+      }
+      
+      // Intelligent Redirect: Go to the requested page if one exists, otherwise dashboard
+      const from = location.state?.from?.pathname || '/dashboard';
+      const intent = location.state?.intent;
+      
+      navigate(from, { replace: true, state: { intent } });
     } catch (err) {
       setError(err.message || 'Login failed. Please check your credentials.');
     } finally {
@@ -36,7 +87,7 @@ export default function Login() {
 
       {error && <div className="mb-6 bg-rose-50 border border-rose-200 text-rose-600 px-4 py-3 rounded-lg text-sm font-medium">{error}</div>}
 
-      <form onSubmit={handleLogin} className="space-y-6">
+      <form onSubmit={handleLogin} className="space-y-6" noValidate>
         <div>
           <label className="block text-sm font-bold text-slate-700 mb-2">Email Address</label>
           <div className="relative">
@@ -49,9 +100,9 @@ export default function Login() {
               onChange={(e) => setEmail(e.target.value)}
               className="block w-full pl-12 pr-4 py-4 border-2 border-slate-100 rounded-xl focus:ring-4 focus:ring-brand-100 focus:border-brand-600 outline-none transition-all font-medium text-slate-900"
               placeholder="admin@stockox.com"
-              required
             />
           </div>
+          {fieldErrors.email && <p className="text-rose-500 text-xs mt-1.5 font-medium">{fieldErrors.email}</p>}
         </div>
 
         <div>
@@ -66,7 +117,6 @@ export default function Login() {
               onChange={(e) => setPassword(e.target.value)}
               className="block w-full pl-12 pr-12 py-4 border-2 border-slate-100 rounded-xl focus:ring-4 focus:ring-brand-100 focus:border-brand-600 outline-none transition-all font-medium text-slate-900"
               placeholder="••••••••"
-              required
             />
             <div className="absolute inset-y-0 right-0 pr-4 flex items-center">
               <button type="button" onClick={() => setShowPassword(!showPassword)} className="text-slate-400 hover:text-slate-600 transition">
@@ -74,12 +124,19 @@ export default function Login() {
               </button>
             </div>
           </div>
+          {fieldErrors.password && <p className="text-rose-500 text-xs mt-1.5 font-medium">{fieldErrors.password}</p>}
         </div>
 
         <div className="flex justify-between items-center mb-2">
           <div className="flex items-center">
-            <input id="remember" type="checkbox" className="h-5 w-5 text-brand-600 focus:ring-brand-600 border-2 border-slate-200 rounded-md cursor-pointer" />
-            <label htmlFor="remember" className="ml-3 block text-sm font-bold text-slate-600">
+            <input 
+              id="remember" 
+              type="checkbox" 
+              checked={keepSignedIn}
+              onChange={(e) => setKeepSignedIn(e.target.checked)}
+              className="h-5 w-5 text-brand-600 focus:ring-brand-600 border-2 border-slate-200 rounded-md cursor-pointer" 
+            />
+            <label htmlFor="remember" className="ml-3 block text-sm font-bold text-slate-600 cursor-pointer">
               Keep me signed in
             </label>
           </div>

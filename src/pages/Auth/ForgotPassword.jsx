@@ -7,12 +7,23 @@ export default function ForgotPassword() {
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsSubmitting(true);
     setError('');
+    setFieldErrors({});
+
+    const errors = {};
+    if (!email) errors.email = 'Email is required';
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+
+    setIsSubmitting(true);
     try {
       await forgotPassword(email);
       navigate('/set-new-password', { state: { email } });
@@ -30,7 +41,7 @@ export default function ForgotPassword() {
         <p className="text-slate-500 font-medium mt-4">Enter the email you used to sign up. We will send an OTP.</p>
       </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6" noValidate>
           {error && <div className="bg-rose-50 border border-rose-200 text-rose-600 px-4 py-3 rounded-lg text-sm font-medium">{error}</div>}
           
           <div>
@@ -43,11 +54,10 @@ export default function ForgotPassword() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="block w-full pl-12 pr-4 py-4 border-2 border-slate-100 rounded-xl focus:ring-4 focus:ring-brand-100 focus:border-brand-600 outline-none font-medium text-slate-900 transition-all bg-white"
               placeholder="admin@stockox.com"
-              required
             />
           </div>
+          {fieldErrors.email && <p className="text-rose-500 text-xs mt-1.5 font-medium">{fieldErrors.email}</p>}
         </div>
 
           <button

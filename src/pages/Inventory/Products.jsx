@@ -1,21 +1,81 @@
 import { useState } from 'react';
-import { Search, Plus, Filter, MoreVertical, Package } from 'lucide-react';
-
-const mockProducts = [
-  { id: 'PRD-101', name: 'MacBook Pro M2 14"', price: '$1,999', category: 'Electronics', stock: 45, status: 'In Stock' },
-  { id: 'PRD-102', name: 'Logitech MX Master 3', price: '$99', category: 'Accessories', stock: 12, status: 'Low Stock' },
-  { id: 'PRD-103', name: 'Herman Miller Chair', price: '$1,299', category: 'Furniture', stock: 0, status: 'Out of Stock' },
-  { id: 'PRD-104', name: 'Sony WH-1000XM5', price: '$348', category: 'Accessories', stock: 120, status: 'In Stock' },
-  { id: 'PRD-105', name: 'Dell UltraSharp 27"', price: '$650', category: 'Electronics', stock: 8, status: 'Low Stock' }
-];
+import { Search, Plus, Filter, Edit2, Trash2, Package, Image, X } from 'lucide-react';
+import LimitWarningBanner from '../../components/billing/LimitWarningBanner';
+import BillingFlowModal from '../../components/billing/BillingFlowModal';
+import { mockProducts } from '../../mock/products.mock.js';
+import { appCurrencies } from '../../mock/settings.mock.js';
 
 export default function Products() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('All');
   const [isModalOpen, setModalOpen] = useState(false);
+  const [isBillingModalOpen, setIsBillingModalOpen] = useState(false);
+
+  const userEmail = sessionStorage.getItem('userEmail');
+  const isDemoUser = userEmail === 'demo@gmail.com';
+  const [productsList, setProductsList] = useState(mockProducts);
+  const [editingProduct, setEditingProduct] = useState(null);
+
+  const savedCurrencyCode = localStorage.getItem('appCurrency') || 'USD';
+  const currencySymbol = appCurrencies.find(c => c.code === savedCurrencyCode)?.symbol || '$';
+  const formatCurrency = (amount) => `${currencySymbol}${amount?.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) || '0.00'}`;
+
+  // Form State
+  const [newProduct, setNewProduct] = useState({ 
+    id: '', name: '', price: '', purchasePrice: '', category: 'Electronics', stock: '', unitType: 'pcs', barcode: '', supplier: '' 
+  });
+
+  const handleDeleteProduct = (id) => {
+    setProductsList(productsList.filter(p => p.id !== id));
+  };
+
+  const handleEditProduct = (product) => {
+    setEditingProduct(product);
+    setNewProduct({ ...product });
+    setModalOpen(true);
+  };
+
+  const generateSKU = () => {
+    setNewProduct({ ...newProduct, id: `PRD-${Math.floor(1000 + Math.random() * 9000)}` });
+  };
+
+  const handleSaveProduct = () => {
+    if (!newProduct.name || !newProduct.price || !newProduct.stock) return;
+    
+    const stockNum = parseInt(newProduct.stock, 10);
+    const status = stockNum === 0 ? 'Out of Stock' : stockNum < 20 ? 'Low Stock' : 'In Stock';
+    
+    if (editingProduct) {
+      const updatedList = productsList.map(p => 
+        p.id === editingProduct.id ? { 
+          ...p, 
+          ...newProduct, 
+          stock: stockNum, 
+          status,
+          price: parseFloat(newProduct.price),
+          purchasePrice: parseFloat(newProduct.purchasePrice)
+        } : p
+      );
+      setProductsList(updatedList);
+    } else {
+      const productToAdd = {
+        ...newProduct,
+        id: newProduct.id || `PRD-${Math.floor(1000 + Math.random() * 9000)}`,
+        price: parseFloat(newProduct.price),
+        purchasePrice: parseFloat(newProduct.purchasePrice),
+        stock: stockNum,
+        status
+      };
+      setProductsList([productToAdd, ...productsList]);
+    }
+
+    setModalOpen(false);
+    setEditingProduct(null);
+    setNewProduct({ id: '', name: '', price: '', purchasePrice: '', category: 'Electronics', stock: '', unitType: 'pcs', barcode: '', supplier: '' });
+  };
 
   // Simple filtering engine
-  const filteredProducts = mockProducts.filter(p => {
+  const filteredProducts = productsList.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || p.id.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === 'All' || p.status === filterStatus;
     return matchesSearch && matchesStatus;
@@ -24,6 +84,15 @@ export default function Products() {
   return (
     <div className="space-y-6 animate-fade-in">
       
+      {/* Limit Warning Banner (Simulated state for demo user only) */}
+      {isDemoUser && (
+        <LimitWarningBanner 
+          current={500} 
+          max={500} 
+          onUpgradeClick={() => setIsBillingModalOpen(true)} 
+        />
+      )}
+
       {/* Header Strategy */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
@@ -31,7 +100,11 @@ export default function Products() {
           <p className="text-slate-500 font-medium text-sm mt-1">Manage your active inventory and stock pricing.</p>
         </div>
         <button 
-          onClick={() => setModalOpen(true)}
+          onClick={() => {
+            setEditingProduct(null);
+            setNewProduct({ id: '', name: '', price: '', purchasePrice: '', category: 'Electronics', stock: '', unitType: 'pcs', barcode: '', supplier: '' });
+            setModalOpen(true);
+          }}
           className="bg-brand-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-brand-700 transition shadow-lg shadow-brand-500/20 flex items-center gap-2"
         >
           <Plus size={18} strokeWidth={2.5} /> Add Product
@@ -95,7 +168,7 @@ export default function Products() {
                     </div>
                   </td>
                   <td className="px-6 py-4 text-slate-500 text-sm font-medium">{product.category}</td>
-                  <td className="px-6 py-4 font-black text-slate-800">{product.price}</td>
+                  <td className="px-6 py-4 font-black text-slate-800">{formatCurrency(product.price)}</td>
                   <td className="px-6 py-4">
                     <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border
                       ${product.status === 'In Stock' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 
@@ -106,9 +179,14 @@ export default function Products() {
                     </span>
                   </td>
                   <td className="px-6 py-4 text-center">
-                    <button className="p-2 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition">
-                      <MoreVertical size={18} />
-                    </button>
+                    <div className="flex items-center justify-center gap-2">
+                      <button onClick={() => handleEditProduct(product)} className="p-1.5 text-brand-600 hover:bg-brand-50 rounded transition" title="Edit">
+                        <Edit2 size={16} />
+                      </button>
+                      <button onClick={() => handleDeleteProduct(product.id)} className="p-1.5 text-rose-500 hover:bg-rose-50 rounded transition" title="Delete">
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               )) : (
@@ -123,28 +201,146 @@ export default function Products() {
         </div>
       </div>
 
-      {/* Pseudo Add Product Modal */}
+      {/* Add / Edit Product Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center animate-fade-in p-4">
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setModalOpen(false)}></div>
-          <div className="bg-white rounded-[24px] shadow-2xl border border-slate-100 w-full max-w-lg relative z-10 p-6 md:p-8">
-            <h2 className="text-2xl font-extrabold text-slate-900 mb-6">Add New Product</h2>
-            <div className="space-y-4 mb-8">
-              <input type="text" placeholder="Product Name" className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-100 outline-none font-medium" />
-              <input type="text" placeholder="Price (USD)" className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-100 outline-none font-medium" />
-              <select className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-100 outline-none font-medium text-slate-600">
-                <option>Electronics</option>
-                <option>Furniture</option>
-                <option>Accessories</option>
-              </select>
+          <div className="bg-white rounded-[24px] shadow-2xl border border-slate-100 w-full max-w-2xl relative z-10 overflow-hidden flex flex-col max-h-[90vh]">
+            
+            <div className="bg-slate-50 p-6 border-b border-slate-200 shrink-0 flex justify-between items-center">
+              <h2 className="text-xl font-extrabold text-slate-900">{editingProduct ? 'Edit Product' : 'Add New Product'}</h2>
+              <button onClick={() => setModalOpen(false)} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-full transition">
+                <X size={20} />
+              </button>
             </div>
-            <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+
+            <div className="p-6 overflow-y-auto space-y-6">
+              
+              <div className="flex gap-6 items-start">
+                {/* Image Placeholder */}
+                <div className="w-32 h-32 bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl flex flex-col items-center justify-center text-slate-400 shrink-0 cursor-pointer hover:bg-slate-100 transition">
+                  <Image size={24} className="mb-2" />
+                  <span className="text-xs font-bold">Upload</span>
+                </div>
+                
+                <div className="flex-1 space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Product Name</label>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. MacBook Pro M2" 
+                      value={newProduct.name}
+                      onChange={e => setNewProduct({...newProduct, name: e.target.value})}
+                      className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-100 outline-none font-medium" 
+                    />
+                  </div>
+                  <div className="flex gap-4 items-end">
+                    <div className="flex-1">
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">SKU / Product ID</label>
+                      <input 
+                        type="text" 
+                        placeholder="e.g. PRD-101" 
+                        value={newProduct.id}
+                        onChange={e => setNewProduct({...newProduct, id: e.target.value})}
+                        className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-100 outline-none font-medium bg-slate-50" 
+                      />
+                    </div>
+                    <button onClick={generateSKU} className="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition shrink-0">
+                      Generate
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Selling Price</label>
+                  <input 
+                    type="number" 
+                    placeholder="0.00" 
+                    value={newProduct.price}
+                    onChange={e => setNewProduct({...newProduct, price: e.target.value})}
+                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-100 outline-none font-medium" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Purchase Price</label>
+                  <input 
+                    type="number" 
+                    placeholder="0.00" 
+                    value={newProduct.purchasePrice}
+                    onChange={e => setNewProduct({...newProduct, purchasePrice: e.target.value})}
+                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-100 outline-none font-medium" 
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Stock Qty</label>
+                  <input 
+                    type="number" 
+                    placeholder="0" 
+                    value={newProduct.stock}
+                    onChange={e => setNewProduct({...newProduct, stock: e.target.value})}
+                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-100 outline-none font-medium" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Unit Type</label>
+                  <select 
+                    value={newProduct.unitType}
+                    onChange={e => setNewProduct({...newProduct, unitType: e.target.value})}
+                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-100 outline-none font-medium"
+                  >
+                    <option value="pcs">Pieces (pcs)</option>
+                    <option value="kg">Kilograms (kg)</option>
+                    <option value="box">Boxes</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Category</label>
+                  <select 
+                    value={newProduct.category}
+                    onChange={e => setNewProduct({...newProduct, category: e.target.value})}
+                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-100 outline-none font-medium"
+                  >
+                    <option value="Electronics">Electronics</option>
+                    <option value="Furniture">Furniture</option>
+                    <option value="Accessories">Accessories</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Supplier</label>
+                <input 
+                  type="text" 
+                  placeholder="Primary Supplier Name" 
+                  value={newProduct.supplier}
+                  onChange={e => setNewProduct({...newProduct, supplier: e.target.value})}
+                  className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-100 outline-none font-medium" 
+                />
+              </div>
+
+            </div>
+            
+            <div className="p-6 border-t border-slate-100 flex justify-end gap-3 shrink-0">
               <button onClick={() => setModalOpen(false)} className="px-6 py-3 font-bold text-slate-500 hover:bg-slate-50 rounded-xl transition">Cancel</button>
-              <button onClick={() => setModalOpen(false)} className="bg-brand-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-brand-700 transition">Save Product</button>
+              <button onClick={handleSaveProduct} className="bg-brand-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-brand-700 transition">
+                {editingProduct ? 'Update Product' : 'Save Product'}
+              </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* Billing Flow Modal */}
+      <BillingFlowModal 
+        isOpen={isBillingModalOpen} 
+        onClose={() => setIsBillingModalOpen(false)} 
+        onUpgradeSuccess={() => console.log('Upgraded successfully!')}
+      />
     </div>
   );
 }

@@ -21,7 +21,12 @@ import SetNewPassword from '../pages/Auth/SetNewPassword';
 import DashboardOverview from '../pages/Dashboard/DashboardOverview';
 import Products from '../pages/Inventory/Products';
 import Settings from '../pages/Dashboard/Settings';
-import PlaceholderPage from '../pages/Dashboard/PlaceholderPage';
+import Profile from '../pages/Dashboard/Profile';
+import Subscription from '../pages/Dashboard/Subscription';
+import Orders from '../pages/Inventory/Orders';
+import Suppliers from '../pages/Inventory/Suppliers';
+import Reports from '../pages/Dashboard/Reports';
+import Customers from '../pages/Dashboard/Customers';
 
 export default function AppRoutes() {
   return (
@@ -53,11 +58,12 @@ export default function AppRoutes() {
           <Route path="settings" element={<Settings />} />
           
           {/* Under Construction Fallbacks */}
-          <Route path="orders" element={<PlaceholderPage />} />
-          <Route path="suppliers" element={<PlaceholderPage />} />
-          <Route path="reports" element={<PlaceholderPage />} />
-          <Route path="customers" element={<PlaceholderPage />} />
-          <Route path="profile" element={<PlaceholderPage />} />
+          <Route path="orders" element={<Orders />} />
+          <Route path="suppliers" element={<Suppliers />} />
+          <Route path="reports" element={<Reports />} />
+          <Route path="customers" element={<Customers />} />
+          <Route path="profile" element={<Profile />} />
+          <Route path="subscription" element={<Subscription />} />
         </Route>
 
         {/* Fallback */}
