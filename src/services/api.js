@@ -1,7 +1,11 @@
 import axios from 'axios';
 
 // Points to the Spring Boot backend
-const API_BASE_URL = 'http://localhost:8081/api/v1'; 
+const USER_API = typeof process !== 'undefined' && process.env.REACT_APP_USER_API 
+  ? process.env.REACT_APP_USER_API 
+  : (import.meta.env.VITE_USER_API || "https://stockox-user-auth-service.onrender.com");
+
+const API_BASE_URL = `${USER_API}/api/v1`; 
 
 const api = axios.create({
   baseURL: API_BASE_URL,
